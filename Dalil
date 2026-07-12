@@ -1,0 +1,77 @@
+import streamlit as st
+import pandas as pd
+
+# Configuration de la page
+st.set_page_config(
+    page_title="Gestion des bus",
+    page_icon="🚌",
+    layout="centered"
+)
+
+st.title("🚌 Analyse de disponibilité des bus")
+st.write(
+    "Cette application analyse le nombre de bus disponibles "
+    "pendant les heures de pointe."
+)
+
+# Données initiales
+donnees = {
+    "Horaire": [
+        "07:00-08:00",
+        "08:00-09:00",
+        "09:00-10:00",
+        "16:00-17:00",
+        "17:00-18:00",
+        "18:00-19:00"
+    ],
+    "Bus nécessaires": [10, 12, 8, 12, 15, 10],
+    "Bus disponibles": [8, 10, 9, 12, 11, 10]
+}
+
+df = pd.DataFrame(donnees)
+
+# Affichage du tableau
+st.subheader("📊 Données de la ligne")
+st.dataframe(df)
+
+# Calcul du manque
+df["Différence"] = df["Bus disponibles"] - df["Bus nécessaires"]
+
+df["Statut"] = df["Différence"].apply(
+    lambda x: "⚠️ Manque de bus" if x < 0 else "✅ Suffisant"
+)
+
+df["Bus manquants"] = df["Différence"].apply(
+    lambda x: abs(x) if x < 0 else 0
+)
+
+# Résultats
+st.subheader("📈 Résultats de l'analyse")
+st.dataframe(df)
+
+# Total des bus manquants
+total_manque = df["Bus manquants"].sum()
+
+st.metric(
+    label="Nombre total de bus manquants",
+    value=f"{total_manque} bus"
+)
+
+# Graphique
+st.subheader("📉 Besoin vs disponibilité")
+
+graph = df.set_index("Horaire")[[
+    "Bus nécessaires",
+    "Bus disponibles"
+]]
+
+st.bar_chart(graph)
+
+# Alerte
+if total_manque > 0:
+    st.warning(
+        f"Il faut prévoir {total_manque} bus supplémentaires "
+        "pendant certaines heures de pointe."
+    )
+else:
+    st.success("La flotte actuelle couvre tous les besoins.")
